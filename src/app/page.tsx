@@ -9,6 +9,7 @@ export default function Home() {
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fastMode, setFastMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,7 +37,7 @@ export default function Home() {
       const response = await fetch("/api/renovate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image, prompt }),
+        body: JSON.stringify({ image, prompt, fastMode }),
       });
 
       const data = await response.json();
@@ -120,6 +121,21 @@ export default function Home() {
               className="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-24"
             />
           </div>
+
+          {/* Fast Mode Toggle */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={fastMode}
+                onChange={(e) => setFastMode(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+            </div>
+            <span className="text-sm text-slate-300">Fast mode (quicker, lower quality)</span>
+          </label>
 
           {/* Submit Button */}
           <button

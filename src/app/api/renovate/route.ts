@@ -31,7 +31,7 @@ async function uploadToFal(dataUrl: string): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, prompt } = await request.json();
+    const { image, prompt, fastMode } = await request.json();
 
     if (!image || !prompt) {
       return NextResponse.json(
@@ -50,12 +50,24 @@ export async function POST(request: NextRequest) {
     // Upload image to FAL storage
     const imageUrl = await uploadToFal(image);
 
-    // Use Seedream 4.5 edit for renovation
-    const result = await fal.subscribe("fal-ai/bytedance/seedream/v4.5/edit", {
-      input: {
-        image_urls: [imageUrl],
-        prompt: `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`,
-      },
+    // Use Seedream v4 with fast mode or v4.5 for higher quality
+    const model = fastMode
+      ? "fal-ai/bytedance/seedream/v4/edit"
+      : "fal-ai/bytedance/seedream/v4.5/edit";
+
+    const input = fastMode
+      ? {
+          image_urls: [imageUrl],
+          prompt: `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`,
+          enhanced_prompt_mode: "fast",
+        }
+      : {
+          image_urls: [imageUrl],
+          prompt: `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`,
+        };
+
+    const result = await fal.subscribe(model, {
+      input,
       logs: true,
     });
 
