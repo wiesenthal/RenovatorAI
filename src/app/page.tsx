@@ -57,7 +57,7 @@ export default function Home() {
 
   return (
     <main className="min-h-[100dvh] bg-gradient-to-b from-slate-900 to-slate-800 text-white p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-2">RenovatorAI</h1>
         <p className="text-slate-400 text-center mb-8">
           Upload a photo of your space and describe your dream renovation
@@ -197,7 +197,7 @@ export default function Home() {
         {result && (
           <div className="mt-8">
             <h2 className="text-2xl font-semibold mb-4">Your Renovated Space</h2>
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+            <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden">
               {result.isVideo ? (
                 <video
                   src={result.url}
