@@ -6,10 +6,11 @@ import Image from "next/image";
 export default function Home() {
   const [image, setImage] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ url: string; isVideo: boolean } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fastMode, setFastMode] = useState(false);
+  const [videoMode, setVideoMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +38,7 @@ export default function Home() {
       const response = await fetch("/api/renovate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image, prompt, fastMode }),
+        body: JSON.stringify({ image, prompt, fastMode, videoMode }),
       });
 
       const data = await response.json();
@@ -46,7 +47,7 @@ export default function Home() {
         throw new Error(data.error || "Failed to generate renovation");
       }
 
-      setResult(data.imageUrl);
+      setResult({ url: data.url, isVideo: data.isVideo });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -122,20 +123,36 @@ export default function Home() {
             />
           </div>
 
-          {/* Fast Mode Toggle */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={fastMode}
-                onChange={(e) => setFastMode(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
-            </div>
-            <span className="text-sm text-slate-300">Fast mode (quicker, lower quality)</span>
-          </label>
+          {/* Mode Toggles */}
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={fastMode}
+                  onChange={(e) => setFastMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+              </div>
+              <span className="text-sm text-slate-300">Fast mode</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={videoMode}
+                  onChange={(e) => setVideoMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-purple-600 transition-colors"></div>
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+              </div>
+              <span className="text-sm text-slate-300">Video mode</span>
+            </label>
+          </div>
 
           {/* Submit Button */}
           <button
@@ -181,21 +198,31 @@ export default function Home() {
           <div className="mt-8">
             <h2 className="text-2xl font-semibold mb-4">Your Renovated Space</h2>
             <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-              <Image
-                src={result}
-                alt="Renovated space"
-                fill
-                className="object-contain"
-              />
+              {result.isVideo ? (
+                <video
+                  src={result.url}
+                  controls
+                  autoPlay
+                  loop
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Image
+                  src={result.url}
+                  alt="Renovated space"
+                  fill
+                  className="object-contain"
+                />
+              )}
             </div>
             <a
-              href={result}
-              download="renovation.png"
+              href={result.url}
+              download={result.isVideo ? "renovation.mp4" : "renovation.png"}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-block py-2 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors"
             >
-              Download Image
+              Download {result.isVideo ? "Video" : "Image"}
             </a>
           </div>
         )}

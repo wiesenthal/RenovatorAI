@@ -31,7 +31,7 @@ async function uploadToFal(dataUrl: string): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, prompt, fastMode } = await request.json();
+    const { image, prompt, fastMode, videoMode } = await request.json();
 
     if (!image || !prompt) {
       return NextResponse.json(
@@ -50,6 +50,32 @@ export async function POST(request: NextRequest) {
     // Upload image to FAL storage
     const imageUrl = await uploadToFal(image);
 
+    const renovationPrompt = `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`;
+
+    if (videoMode) {
+      // Use Grok Imagine for video generation
+      const result = await fal.subscribe("xai/grok-imagine-video/image-to-video", {
+        input: {
+          image_url: imageUrl,
+          prompt: renovationPrompt,
+          duration: 6,
+          resolution: "720p",
+        },
+        logs: true,
+      });
+
+      const videoUrl = result.data?.video?.url;
+
+      if (!videoUrl) {
+        return NextResponse.json(
+          { error: "Failed to generate video" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ url: videoUrl, isVideo: true });
+    }
+
     // Use Seedream v4 with fast mode or v4.5 for higher quality
     const model = fastMode
       ? "fal-ai/bytedance/seedream/v4/edit"
@@ -58,12 +84,12 @@ export async function POST(request: NextRequest) {
     const input = fastMode
       ? {
           image_urls: [imageUrl],
-          prompt: `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`,
+          prompt: renovationPrompt,
           enhanced_prompt_mode: "fast",
         }
       : {
           image_urls: [imageUrl],
-          prompt: `Renovate this room: ${prompt}. Interior design, professional photography, high quality, detailed`,
+          prompt: renovationPrompt,
         };
 
     const result = await fal.subscribe(model, {
@@ -80,7 +106,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ imageUrl: resultImageUrl });
+    return NextResponse.json({ url: resultImageUrl, isVideo: false });
   } catch (error) {
     console.error("Renovation error:", error);
     return NextResponse.json(
